@@ -7,6 +7,8 @@ if [ ! -f "$APK_TOOL" ]; then
     exit 1
 fi
 
+FAKEROOT_TOOL="$(which fakeroot)"
+
 show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS] <FILE.ipk>... [OUTPUT_DIR]
@@ -211,7 +213,16 @@ EOF
         extra_args+=(--info "tags:openwrt:cpe=$pkg_cpe_id")
     fi
 
-    "$APK_TOOL" mkpkg \
+    local cmd_prefix=()
+    if [ "$EUID" -ne 0 ]; then
+        if [ -f "$FAKEROOT_TOOL" ]; then
+            cmd_prefix=("$FAKEROOT_TOOL")
+        else
+            echo "Warning: Not running as root and 'fakeroot' is not installed. File permissions inside the APK might be incorrect."
+        fi
+    fi
+
+    "${cmd_prefix[@]}" "$APK_TOOL" mkpkg \
         --info "name:$pkg_name" \
         --info "version:$pkg_version" \
         --info "description:$pkg_desc" \
