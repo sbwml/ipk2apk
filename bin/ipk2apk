@@ -86,7 +86,9 @@ convert_one_ipk() {
     local pkg_cpe_id=$(get_metadata "CPE-ID")
     local pkg_alternatives=$(get_metadata "Alternatives" | sed 's/, */ /g')
 
-    local pkg_desc=$(sed -n '/^Description:/,/^[A-Z][a-zA-Z-]*:/p' "$control_file" | sed 's/^Description: *//' | tr '\n' ' ')
+    local pkg_desc=$(sed -n '/^Description:/,/^[A-Z][a-zA-Z-]*:/p' "$control_file" \
+        | sed -e '1s/^Description: *//' -e '2,$ { /^[A-Z][a-zA-Z-]*:/d; s/^ //; s/^\.// }' \
+        | tr '\n' ' ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')
     [ -z "$pkg_desc" ] && pkg_desc=$(get_metadata "Description")
 
     # generate .list for apk package
